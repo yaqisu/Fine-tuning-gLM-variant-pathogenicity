@@ -3,7 +3,7 @@ This repository contains codes for reproduction of results in the 2025 Fall CS28
 
 ## Repository Structure
 
-### data_preprocessing/
+### Data_preprocessing/
 Codes for generating training and validation data. The generated dataset can be downloaded [here](https://drive.google.com/file/d/1srEASzSajo2EVu-0WANFGVbqXT68BhwC/view?usp=sharing)
 
 ### NT2_phase1_and_unfreezeAll.py
@@ -15,7 +15,7 @@ Script for phase 2 (LoRA fine-tuning) and phase 3 (learning rate) experiments us
 ### NT1_phase1.py
 Script for phase 1 experiments using Nucleotide Transformer 1.
 
-### Caduceus_phase1.py
+### caduceus_phase1.py
 Script for phase 1 experiments for Caduceus.
 
 ### figures.ipynb
