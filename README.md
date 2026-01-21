@@ -1,4 +1,4 @@
-# Fine tuning genomic languague model for variant pathogenicity prediction
+# Fine tuning genomic language models for variant pathogenicity prediction
 This repository contains codes for reproduction of results in the ISMB 2026 paper submission titled "Fine tuning genomic languague model for variant pathogenicity prediction"
 
 ## Repository Structure
