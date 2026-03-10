@@ -1,2 +1,3 @@
 data/
-preprocessing/ClinVar_BED_files
+preprocessing/ClinVar_BED_files/
+preprocessing/reference/
