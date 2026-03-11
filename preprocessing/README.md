@@ -18,7 +18,7 @@ preprocessing/generate_sequences.sh
 data/sequences/
         │
         ▼
-preprocessing/split_data.py
+preprocessing/generate_splits.sh
         │
         ▼
 data/splits/
@@ -31,8 +31,9 @@ data/splits/
 | Script | Description |
 |--------|-------------|
 | `extract_variant_sequences.py` | Extracts flanking sequences around each variant from the reference genome |
-| `generate_sequences.sh` | Batch wrapper — runs extraction for all 4 variant classes and 5 window sizes |
-| `split_data.py` | Splits sequences into train/val sets and writes to `data/splits/` |
+| `generate_sequences.sh` | Batch wrapper — runs extraction for all 4 variant classes and 5 window sizes, outputs to `data/sequences/` |
+| `split_data_fixed_chroms.py` | Splits a combined sequence file into train/val by chromosome assignment |
+| `generate_splits.sh` | Batch wrapper — runs splitting for all window sizes and both dataset modes, outputs to `data/splits/` |
 
 ---
 
@@ -72,9 +73,10 @@ BED files use **1-based coordinates**.
 
 ### Sequences (`data/sequences/`)
 
-Running `generate_sequences.sh` produces one file per variant class per window size, named:
+Running `generate_sequences.sh` produces one `.tsv` file per variant class per window size, named:
+
 ```
-{bed_filename}.seq{window_size}.txt
+{bed_filename}.seq{window_size}.tsv
 ```
 
 The `-l` parameter in `extract_variant_sequences.py` specifies flanking bp on **each side** of the variant. Total sequence length = `(2 × l) + 1`.
@@ -89,41 +91,61 @@ The `-l` parameter in `extract_variant_sequences.py` specifies flanking bp on **
 
 These window sizes correspond to the context lengths of the genomic language models used (Nucleotide Transformer, Caduceus).
 
+
+
 ### Splits (`data/splits/`)
 
-`split_data.py` produces:
-- `train.txt` — training sequences
-- `val.txt` — validation sequences
-- `split_info.txt` — records random seed, split ratio, and date for reproducibility
+Running `generate_splits.sh` produces train/val `.tsv` files for each window size and dataset mode, named:
+
+```
+ClinVar.251103.missense.hg38.seq{size}.{mode}_{training|validation}.tsv
+```
+
+Two dataset modes are supported:
+
+| Mode | Classes included | Label encoding | Window sizes |
+|------|-----------------|----------------|--------------|
+| `BvsP` | Benign + Pathogenic | benign=0, pathogenic=1 | 6k, 12k, 30k, 60k, 130k |
+| `BLBvsPLP` | Benign + Likely benign + Likely pathogenic + Pathogenic | benign/likely_benign=0, pathogenic/likely_pathogenic=1 | 6k, 12k, 30k, 60k, 130k |
+
+Each split file contains the following columns:
+
+```
+variant_id  chromosome  position  ref_allele  alt_allele  upstream_flank  downstream_flank  ref_sequence  alt_sequence  label
+```
+
+#### Chromosome split
+
+Data was split by chromosome to avoid data leakage between train and validation sets. The chromosome assignments were established from the initial dataset using a random shuffle, then hardcoded in `split_data_fixed_chroms.py` to ensure consistency across all experiments:
+
+- **Train:** chr 1–6, 9–10, 12–14, 16–19, 21–22, MT, X, Y (~80%)
+- **Val:** chr 7, 8, 11, 15, 20 (~20%)
 
 ---
 
 ## Running the Pipeline
 
 **Step 1 — Generate sequences** (requires reference genome in `data/reference/`):
+
 ```bash
 bash preprocessing/generate_sequences.sh
 ```
+
 Generates all 20 files (4 classes × 5 window sizes) into `data/sequences/`. Already-existing files are skipped, so it is safe to re-run.
 
-**Step 2 — Generate train/val split:**
+**Step 2 — Generate train/val splits:**
+
 ```bash
-python preprocessing/split_data.py
+bash preprocessing/generate_splits.sh
 ```
 
-**Or run a single file manually:**
-```bash
-python preprocessing/extract_variant_sequences.py \
-    -b data/bed/ClinVar.251103.missense.hg38.pathogenic.bed \
-    -f data/reference/Homo_sapiens.GRCh38.dna.primary_assembly.fa \
-    -l 5999 \
-    -o data/sequences/ClinVar.251103.missense.hg38.pathogenic.bed.seq12k.txt
-```
+Generates 20 split files into `data/splits/` — 10 for `BvsP` (5 window sizes × 2) and 10 for `BLBvsPLP` (5 window sizes × 2).
 
 ---
 
 ## Notes
 
-- `data/sequences/` and `data/splits/` are excluded from git via `.gitignore` — download from Google Drive instead of regenerating if possible
-- `data/reference/` is also excluded from git due to file size
-- `data/bed/` is tracked in git since BED files are small
+- `data/bed/` — tracked in git (small ClinVar BED files, ~few MB)
+- `data/reference/` — not tracked in git (reference genome ~3 GB); download instructions above
+- `data/sequences/` — not tracked in git (large generated files); regenerate using `generate_sequences.sh`
+- `data/splits/` — not tracked in git (generated from sequences); regenerate using `generate_splits.sh`

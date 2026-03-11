@@ -108,7 +108,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Example usage:
-  python extract_variant_sequences.py -b variants.bed -f genome.fa -l 50 -o sequences.txt
+  python extract_variant_sequences.py -b variants.bed -f genome.fa -l 50 -o sequences.tsv
   
 This will extract up to 50 bp flanking sequence on each side of each variant.
 BED file is assumed to be 1-based coordinates.

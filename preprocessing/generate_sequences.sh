@@ -1,6 +1,6 @@
 #!/bin/bash
 # generate_sequences.sh
-# Generates all sequence txt files from ClinVar BED files
+# Generates all sequence tsv files from ClinVar BED files
 # Usage: bash preprocessing/generate_sequences.sh (run from repo root)
 #
 # Note: -l specifies flanking bp on EACH SIDE of the variant.
@@ -11,9 +11,9 @@
 #   seq60k  -> -l 29999  (59999 bp total)
 #   seq130k -> -l 64999  (129999 bp total)
 
-GENOME="preprocessing/reference/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
-BED_DIR="preprocessing/ClinVar_BED_files"
-OUT_DIR="data"
+GENOME="data/reference/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+BED_DIR="data/bed"
+OUT_DIR="data/sequences"
 SCRIPT="preprocessing/extract_variant_sequences.py"
 
 # Create output directory if it doesn't exist
@@ -39,7 +39,7 @@ for BED in "${BED_FILES[@]}"; do
     for SUFFIX in "${!LENGTHS[@]}"; do
         FLANK="${LENGTHS[$SUFFIX]}"
         INPUT="$BED_DIR/$BED"
-        OUTPUT="$OUT_DIR/${BED}.seq${SUFFIX}.txt"
+        OUTPUT="$OUT_DIR/${BED}.seq${SUFFIX}.tsv"
 
         # Skip if output already exists
         if [ -f "$OUTPUT" ]; then
