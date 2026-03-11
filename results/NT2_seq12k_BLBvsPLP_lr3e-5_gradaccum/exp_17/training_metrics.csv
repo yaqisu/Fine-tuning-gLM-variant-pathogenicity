@@ -1,0 +1,1 @@
+steps,train_loss,train_auc,val_loss,val_auc,learning_rate,gpu_memory_gb
