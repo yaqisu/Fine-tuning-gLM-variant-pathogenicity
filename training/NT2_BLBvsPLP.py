@@ -43,8 +43,8 @@ EXPERIMENT_CONFIGS = [
         "fine_tuning": "lora",
         "lora_rank": 32,
         "batch_size": 4,
-        "num_steps": 40000,
-        "gradient_accumulation_steps": 8,  # effective batch size = 32
+        "gradient_accumulation_steps": 8,  # effective batch size = batch_size * gradient_accumulation_steps = 32
+        "num_steps": 17000, # steps = (epochs × samples) / effective_batch_size = (3.6 × 151,015) / 32 = ~17,000 steps
         "learning_rate": 3e-5
     },
 
