@@ -2,3 +2,6 @@ data/reference/
 data/sequences/
 data/splits/
 results/
+!results/figures/
+!results/figures.ipynb
+!results/results.tsv
