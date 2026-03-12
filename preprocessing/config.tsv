@@ -1,0 +1,22 @@
+# Sequence generation and train/val split config
+# Each row defines one output dataset.
+# Columns:
+#   name             — output filename stem (used for data/sequences/ and data/splits/)
+#   class0_files     — semicolon-separated BED paths assigned label=0 (benign)
+#   class1_files     — semicolon-separated BED paths assigned label=1 (pathogenic)
+#   unlabeled_files  — semicolon-separated BED paths with no label column (benchmark/test)
+#   split            — yes: generate train/val splits in data/splits/
+#                      no:  generate sequences only in data/sequences/
+#
+# Leave class0_files and class1_files empty for unlabeled datasets.
+# Leave unlabeled_files empty for labeled datasets.
+# Lines starting with # are ignored.
+#
+# Split output filename format: {name}.seq{size}_{training|validation}.tsv
+#
+# NOTE: File must end with a blank line or the last dataset row will be silently skipped.
+#
+# name	class0_files	class1_files	unlabeled_files	split
+ClinVar.251103.missense.hg38.BvsP	data/bed/ClinVar.251103.missense.hg38.benign.bed	data/bed/ClinVar.251103.missense.hg38.pathogenic.bed		yes
+ClinVar.251103.missense.hg38.BLBvsPLP	data/bed/ClinVar.251103.missense.hg38.benign.bed;data/bed/ClinVar.251103.missense.hg38.likely_benign.bed	data/bed/ClinVar.251103.missense.hg38.pathogenic.bed;data/bed/ClinVar.251103.missense.hg38.likely_pathogenic.bed		yes
+ClinVar.260309only.missense.hg38.BLBvsPLP	data/bed/ClinVar.260309only.missense.hg38.benign.bed;data/bed/ClinVar.260309only.missense.hg38.likely_benign.bed	data/bed/ClinVar.260309only.missense.hg38.pathogenic.bed;data/bed/ClinVar.260309only.missense.hg38.likely_pathogenic.bed		no

@@ -1,7 +1,6 @@
 # Fine-tuning Genomic Language Models for Variant Pathogenicity Prediction
 
-This repository contains the code for *“Fine-tuning genomic language models for variant pathogenicity prediction”* (Su\*, Lin\*, et al.; \*co-first authors; in preparation).
-
+This repository contains the code for *"Fine-tuning genomic language models for variant pathogenicity prediction"* (Su\*, Lin\*, et al.; \*co-first authors; in preparation).
 
 We fine-tune genomic language models (Nucleotide Transformer v2, Caduceus) on ClinVar missense variants to predict pathogenicity. Our best model achieves **0.886 AUC** using NT2 with LoRA (rank=32) and a CNN classifier head.
 
@@ -24,7 +23,7 @@ upstream_flank  downstream_flank  ref_sequence  alt_sequence
 python scoring/score_variants.py \
     --input  your_variants.tsv \
     --model  scoring/model/best_model.pt \
-    --output results/predictions/scores.tsv \
+    --output results/predictions/scores.tsv
 ```
 
 **Output** — a TSV file with one row per variant:
@@ -47,17 +46,20 @@ Fine-tuning-gLM-variant-pathogenicity/
 │   ├── bed/                            # ClinVar BED files (tracked in git)
 │   ├── reference/                      # GRCh38 reference genome (gitignored, ~3GB)
 │   ├── sequences/                      # Extracted sequences (gitignored)
-│   └── splits/                         # Train/val splits (gitignored)
+│   ├── splits/                         # Train/val splits (gitignored)
+│   └── vcf/                            # ClinVar VCF files (gitignored)
 │
 ├── preprocessing/                      # Scripts to generate data/ from raw inputs
-│   ├── extract_variant_sequences.py
-│   ├── generate_sequences.sh
-│   ├── split_data_fixed_chroms.py
-│   ├── generate_splits.sh
+│   ├── config.tsv                      # Dataset definitions (edit to add timestamps)
+│   ├── process_clinvar.sh              # Download ClinVar VCFs → BED files
+│   ├── subtract_new_variants.sh        # Extract held-out benchmark variants
+│   ├── generate_datasets.sh            # Generate sequences and train/val splits
+│   ├── extract_variant_sequences.py    # Extract flanking sequences from FASTA
+│   ├── split_data_fixed_chroms.py      # Split by chromosome into train/val
 │   └── README.md
 │
 ├── training/                           # Model training scripts
-│   ├── NT2_BLBvsPLP.py                 
+│   ├── NT2_BLBvsPLP.py
 │   ├── NT2_phase1_and_unfreezeAll.py
 │   ├── NT2_phase2_and_phase3.py
 │   ├── NT1_phase1.py
@@ -84,23 +86,53 @@ Fine-tuning-gLM-variant-pathogenicity/
 
 ## Reproducing Paper Results
 
-Follow these steps in order to reproduce our results from scratch:
+Follow these steps in order to reproduce our results from scratch.
 
 ### 1. Data
-Download the reference genome and place ClinVar BED files (see [`preprocessing/README.md`](preprocessing/README.md)):
+
+Download the reference genome:
 ```bash
-# BED files are already in data/bed/ (tracked in git)
-# Download reference genome:
 wget https://ftp.ensembl.org/pub/release-104/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 mv Homo_sapiens.GRCh38.dna.primary_assembly.fa data/reference/
 ```
 
+ClinVar BED files for both timestamps are already tracked in `data/bed/`. To regenerate them from scratch (e.g. for a new ClinVar release), see Step 2a below.
+
 ### 2. Preprocessing
-Generate sequence files and train/val splits:
+
+All preprocessing scripts are run from the **repo root**. See [`preprocessing/README.md`](preprocessing/README.md) for full documentation.
+
+**2a. (Optional) Download ClinVar VCFs and regenerate BED files**
+
+Only needed if you want to update to a new ClinVar release or regenerate from scratch. BED files for `251103` and `260309` are already in `data/bed/`.
+
 ```bash
-bash preprocessing/generate_sequences.sh
-bash preprocessing/generate_splits.sh
+bash preprocessing/process_clinvar.sh \
+    -t clinvar_20251103,clinvar_20260309 \
+    -b /path/to/bcftools
+```
+
+> **Note:** If regenerating BED files, also re-run Step 2b to update the held-out benchmark set.
+
+**2b. (Optional) Extract held-out benchmark variants**
+
+Extracts variants present in the `260309` release but not in `251103`, ensuring the benchmark set was never seen during training.
+
+```bash
+bash preprocessing/subtract_new_variants.sh
+```
+
+**2c. Generate sequences and train/val splits**
+
+```bash
+bash preprocessing/generate_datasets.sh -c preprocessing/config.tsv -s 12k
+```
+
+This reads `preprocessing/config.tsv` to determine which BED files to use, extracts flanking sequences from the reference genome, and generates train/val splits for labeled datasets. To generate all window sizes used in the paper:
+
+```bash
+bash preprocessing/generate_datasets.sh -c preprocessing/config.tsv -s 6k,12k,30k
 ```
 
 ### 3. Training
@@ -115,7 +147,7 @@ Training scripts are organized by model and experimental phase. All scripts are 
 | `training/NT1_phase1.py` | NT1 | Phase 1: frozen backbone experiments |
 | `training/caduceus_phase1.py` | Caduceus | Phase 1: frozen backbone experiments |
 
-To reproduce the exact experiments from the paper, run the commands used in our paper:
+To reproduce the exact experiments from the paper:
 ```bash
 bash training/runs.sh
 ```
@@ -124,7 +156,7 @@ bash training/runs.sh
 
 Training outputs are saved to `results/` (one subdirectory per experiment). The combined results table used for figure generation is at `results/results.tsv`.
 
-Generate all paper figures using the notebook:
+Generate all paper figures:
 ```bash
 jupyter nbconvert --to notebook --execute results/figures.ipynb
 ```
@@ -140,16 +172,17 @@ Generated figures are saved to `results/figures/`:
 | `fig6_model_performance_summary` | Summary of all model results |
 
 ### 5. Scoring
+
 Score new variants using the best trained model:
 ```bash
 python scoring/score_variants.py \
-    --input  data/splits/ClinVar.251103.missense.hg38.seq12k.BvsP_validation.tsv \
+    --input  your_variants.tsv \
     --model  scoring/model/best_model.pt \
-    --config scoring/model/model_config.json \
-    --output results/predictions/val_scores.tsv
+    --output results/predictions/scores.tsv \
 ```
 
 ### 6. Evaluation
+
 Evaluate predictions against ground truth labels:
 ```bash
 # See evaluation/README.md

@@ -7,22 +7,26 @@ import argparse
 from pyfaidx import Fasta
 
 
-def extract_variant_sequences(bed_file, fasta_file, flank_length, output_file):
+def extract_variant_sequences(bed_file, fasta_file, flank_length, output_file, label=None):
     """
     Extract reference and alternative sequences for each variant.
     
     Args:
-        bed_file: Path to BED file with variants (1-based coordinates)
+        bed_file: Path to BED file with variants (0-based coordinates)
         fasta_file: Path to reference genome FASTA
         flank_length: Length of flanking sequence on each side
         output_file: Path to output text file
+        label: Integer label to append as final column (0 or 1). If None, no label column.
     """
     # Load reference genome
     genome = Fasta(fasta_file)
     
     with open(bed_file, 'r') as bed, open(output_file, 'w') as out:
  
-        out.write("variant_id\tchromosome\tposition\tref_allele\talt_allele\tupstream_flank\tdownstream_flank\tref_sequence\talt_sequence\n")
+        header = "variant_id\tchromosome\tposition\tref_allele\talt_allele\tupstream_flank\tdownstream_flank\tref_sequence\talt_sequence"
+        if label is not None:
+            header += "\tlabel"
+        out.write(header + "\n")
         
         mismatch_count = 0
         total_variants = 0
@@ -40,14 +44,14 @@ def extract_variant_sequences(bed_file, fasta_file, flank_length, output_file):
             total_variants += 1
             
             chrom = fields[0]
-            start = int(fields[1])  # 1-based BED coordinate
+            start = int(fields[1])  # 0-based BED coordinate (start of variant)
             end = int(fields[2])
             variant_id = fields[3]
             ref_allele = fields[4].upper()
             alt_allele = fields[5].upper()
             
-            # Convert 1-based to 0-based for FASTA access
-            var_pos = start - 1 
+            # BED start is 0-based; use directly for FASTA access
+            var_pos = start
             
             # Strip 'chr' prefix for FASTA lookup
             chrom_fasta = chrom.replace('chr', '', 1) if chrom.startswith('chr') else chrom
@@ -75,7 +79,7 @@ def extract_variant_sequences(bed_file, fasta_file, flank_length, output_file):
                 extracted_ref = sequence[var_offset]
                 if extracted_ref != ref_allele:
                     mismatch_count += 1
-                    print(f"Warning: Reference mismatch for {variant_id} at {chrom}:{start} (1-based)")
+                    print(f"Warning: Reference mismatch for {variant_id} at {chrom}:{start+1} (1-based)")
                     print(f"  Expected: {ref_allele}, Found: {extracted_ref}")
             
             # Create alternative sequence by replacing the reference allele
@@ -89,15 +93,20 @@ def extract_variant_sequences(bed_file, fasta_file, flank_length, output_file):
             chrom_output = chrom.replace('chr', '', 1) if chrom.startswith('chr') else chrom
             
             # Write tab-separated output
-            out.write(f"{variant_id}\t{chrom_output}\t{start}\t{ref_allele}\t{alt_allele}\t{upstream_flank}\t{downstream_flank}\t{sequence}\t{alt_sequence}\n")
+            row = f"{variant_id}\t{chrom_output}\t{start+1}\t{ref_allele}\t{alt_allele}\t{upstream_flank}\t{downstream_flank}\t{sequence}\t{alt_sequence}"
+            if label is not None:
+                row += f"\t{label}"
+            out.write(row + "\n")
         
         # Write summary
-        print(f"\n{'='*60}")
+        print(f"\n{'='*40}")
         print(f"SUMMARY")
-        print(f"{'='*60}")
+        print(f"{'='*40}")
         print(f"Total variants processed: {total_variants}")
         print(f"Reference allele mismatches: {mismatch_count}")
-        print(f"{'='*60}\n")
+        unlabeled_str = "(unlabeled)"
+        print(f"Label:                         {label if label is not None else unlabeled_str}")
+        print(f"{'='*40}\n")
     
     print(f"Extraction complete. Output written to {output_file}")
 
@@ -111,22 +120,25 @@ Example usage:
   python extract_variant_sequences.py -b variants.bed -f genome.fa -l 50 -o sequences.tsv
   
 This will extract up to 50 bp flanking sequence on each side of each variant.
-BED file is assumed to be 1-based coordinates.
+BED file is assumed to be 0-based coordinates (standard BED format).
+The position column in the output is 1-based for readability.
         """
     )
     
     parser.add_argument('-b', '--bed', required=True,
-                        help='Input BED file with variants (1-based coordinates)')
+                        help='Input BED file with variants (0-based coordinates, standard BED)')
     parser.add_argument('-f', '--fasta', required=True,
                         help='Reference genome FASTA file')
     parser.add_argument('-l', '--flank-length', type=int, required=True,
                         help='Length of flanking sequence on each side of the variant')
     parser.add_argument('-o', '--output', required=True,
                         help='Output text file')
+    parser.add_argument('--label', type=int, default=None,
+                        help='Integer label to add as final column (e.g. 0 for benign, 1 for pathogenic). Omit for unlabeled output.')
     
     args = parser.parse_args()
     
-    extract_variant_sequences(args.bed, args.fasta, args.flank_length, args.output)
+    extract_variant_sequences(args.bed, args.fasta, args.flank_length, args.output, label=args.label)
 
 
 if __name__ == '__main__':
