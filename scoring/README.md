@@ -71,7 +71,7 @@ Run from the **repo root**:
 python scoring/score_variants.py \
     --input  your_variants.tsv \
     --model  scoring/model/best_model.pt \
-    --output results/predictions/scores.tsv \
+    --output results/predictions/scores.tsv
 ```
 
 ### All arguments

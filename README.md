@@ -178,7 +178,7 @@ Score new variants using the best trained model:
 python scoring/score_variants.py \
     --input  your_variants.tsv \
     --model  scoring/model/best_model.pt \
-    --output results/predictions/scores.tsv \
+    --output results/predictions/scores.tsv
 ```
 
 ### 6. Evaluation
