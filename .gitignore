@@ -9,4 +9,6 @@ results/
 scoring/model/
 !scoring/model/model_config.json
 
-evaluation/core/__pycache__
+**/__pycache__/
+*.pyc
+*.pyo
