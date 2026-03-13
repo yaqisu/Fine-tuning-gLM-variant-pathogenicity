@@ -8,3 +8,5 @@ results/
 
 scoring/model/
 !scoring/model/model_config.json
+
+evaluation/core/__pycache__
