@@ -182,11 +182,7 @@ python scoring/score_variants.py \
 ```
 
 ### 6. Evaluation
-
-Evaluate predictions against ground truth labels:
-```bash
-# See evaluation/README.md
-```
+Evaluate predictions against ground truth labels — see [evaluation](evaluation/README.md) for details.
 
 ---
 
