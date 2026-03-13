@@ -12,7 +12,7 @@ If you just want to score variants using our best pre-trained model:
 
 **1. Download the model weights** (link TBD upon publication) and place at `scoring/model/best_model.pt`
 
-**2. Prepare your input** — a TSV file with the same format as our split files (see [`preprocessing/README.md`](preprocessing/README.md) for how to generate this from a BED file). Required columns:
+**2. Prepare your input** — a TSV file with the same format as our split files (see [preprocessing](preprocessing/README.md) for how to generate this from a BED file). Required columns:
 ```
 variant_id  chromosome  position  ref_allele  alt_allele
 upstream_flank  downstream_flank  ref_sequence  alt_sequence
@@ -101,7 +101,7 @@ ClinVar BED files for both timestamps are already tracked in `data/bed/`. To reg
 
 ### 2. Preprocessing
 
-All preprocessing scripts are run from the **repo root**. See [`preprocessing/README.md`](preprocessing/README.md) for full documentation.
+All preprocessing scripts are run from the **repo root**. See [preprocessing](preprocessing/README.md) for full documentation.
 
 **2a. (Optional) Download ClinVar VCFs and regenerate BED files**
 
